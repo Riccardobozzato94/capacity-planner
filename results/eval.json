@@ -1,0 +1,10 @@
+{
+  "id": "eval-capacity-20261119",
+  "createdAt": "2026-11-19T09:00:00.000Z",
+  "dataset": "capacity-planner",
+  "seed": "20261119",
+  "count": 4,
+  "overloadDetectionAccuracy": 0.75,
+  "assignmentRate": 1,
+  "unassignedExplained": 1
+}
