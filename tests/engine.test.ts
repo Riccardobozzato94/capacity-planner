@@ -114,3 +114,24 @@ test("dataset sintetico: seed, 4 sprint, 8-12 membri e 10-14 demand", () => {
     assert.equal(r.generatedAt, "2026-11-19T09:00:00.000Z");
   }
 });
+
+test("dataset sintetico: S2 ha una demand non assegnata con motivo esplicito", () => {
+  const s2 = SPRINTS.find((s) => s.name === "S2")!;
+  const r = planCapacity(s2.members, s2.demands, s2.name, "2026-11-19T09:00:00.000Z");
+  assert.deepEqual(r.unassigned, ["d11"]);
+  const a = r.assignments.find((x) => x.demandId === "d11")!;
+  assert.equal(a.memberId, null);
+  assert.equal(a.reason, "Nessuna disponibilità per skill Kafka: servono 8 h");
+});
+
+test("dataset sintetico: S3 ha un membro in overload oltre l'85%", () => {
+  const s3 = SPRINTS.find((s) => s.name === "S3")!;
+  const r = planCapacity(s3.members, s3.demands, s3.name, "2026-11-19T09:00:00.000Z");
+  const over = r.members.filter((m) => m.overloaded);
+  assert.deepEqual(over.map((m) => m.member.id), ["SC"]);
+  assert.ok(over[0].utilizationPct > 85);
+  assert.equal(over[0].assignedHours, 12);
+  assert.equal(over[0].member.availableHours, 14);
+  assert.equal(r.totals.overloadedMembers, 1);
+  assert.deepEqual(r.unassigned, []);
+});

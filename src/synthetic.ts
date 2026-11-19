@@ -58,11 +58,18 @@ export const SPRINTS: Array<{ name: string; members: Member[]; demands: Demand[]
       demand("d08", "TypeScript build", "TypeScript", 6, "low"),
       demand("d09", "Pimcore import", "Pimcore", 6, "low"),
       demand("d10", "Fix Magento", "Magento", 4, "low"),
+      // Nessun membro di S2 ha la skill Kafka: la demand resta non assegnata
+      // con motivo esplicito, senza ricorrere a una probe nell'eval.
+      demand("d11", "Integrazione eventi Kafka", "Kafka", 8, "high"),
     ],
   },
   {
     name: "S3",
-    members: POOL.filter((m) => m.id !== "EC" && m.id !== "TV"),
+    // SC e' l'unico UX di S3: 12 h assegnate su 14 h disponibili lo portano
+    // oltre la soglia 85%, rendendo visibile lo stato di overload nel dataset.
+    members: POOL.filter((m) => m.id !== "EC" && m.id !== "TV").map((m) =>
+      m.id === "SC" ? { ...m, availableHours: 14 } : { ...m }
+    ),
     demands: [
       demand("d01", "Integrazione API pagamenti", "API", 14, "high"),
       demand("d02", "Catalogo Pimcore", "Pimcore", 12, "high"),

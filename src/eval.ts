@@ -6,21 +6,22 @@ const CREATED_AT = "2026-11-19T09:00:00.000Z";
 const DATASET = "capacity-planner";
 const EVAL_ID = "eval-capacity-20261119";
 
-// Rende esplicito lo scope di unassignedExplained: il valore non puo essere
-// letto come evidenza sui soli 4 sprint del dataset.
+// Rende esplicito lo scope di unassignedExplained: ora l'evidenza viene dai
+// 4 sprint stessi (una demand non assegnata in S2), senza casi artificiali.
 const NOTE =
-  "I 4 sprint sintetici non hanno demand non assegnate. unassignedExplained e reso non vacuo da una probe interna, non conteggiata in count: la probe esercita una demand senza alcun membro con la skill richiesta. Il valore copre gli sprint del dataset piu la probe.";
+  "I 4 sprint sintetici includono una demand non assegnata in S2 (skill senza membri compatibili) e un membro in overload in S3 (utilizzazione oltre l'85%). unassignedExplained e calcolato sui soli sprint del dataset, senza casi artificiali: ogni demand non assegnata ha un motivo esplicito e compare in unassigned.";
 
 // Ground truth annotata a mano, indipendente da planCapacity: id dei membri
 // che l'annotatore considera in overload. Non e derivata dall'output del motore.
 // L'annotatore usa un giudizio di rischio key-person, non la soglia fissa 85%:
-// per S3 segnala AL (20 h, punto unico per le integrazioni API) mentre il
-// motore non segnala nessuno. Disaccordo deliberato: accuracy < 1 by design.
+// per S4 segnala AL (punto unico per le integrazioni API) mentre il motore non
+// segnala nessuno. S3 e' il caso reale di overload (SC): l'annotatore concorda.
+// Disaccordo deliberato su S4: accuracy < 1 by design.
 const EXPECTED_OVERLOADED: Record<string, string[]> = {
   S1: [],
   S2: [],
-  S3: ["AL"],
-  S4: [],
+  S3: ["SC"],
+  S4: ["AL"],
 };
 
 function fraction(matches: number, total: number): number {
@@ -88,16 +89,8 @@ export function evaluate(): {
     explainedChecks.push(explained(result));
   }
 
-  // Controllo non vacuo: una domanda Pimcore senza alcun membro con la skill
-  // deve finire in `unassigned` con motivo esplicito (Review Focus Task 13).
-  // Non entra in `count`, che resta il numero di sprint del dataset.
-  const probe = planCapacity(
-    [{ id: "probe", name: "probe", role: "Dev", skills: ["TypeScript"], availableHours: 30 }],
-    [{ id: "probe-d", title: "Probe", skill: "Pimcore", effortHours: 8, priority: "high" }],
-    "PROBE",
-    CREATED_AT
-  );
-  explainedChecks.push(explained(probe));
+  // Nessuna probe: S2 contiene gia' una demand non assegnata con motivo
+  // esplicito, quindi i 4 controlli sui sprint del dataset sono non vacui.
 
   return {
     id: EVAL_ID,

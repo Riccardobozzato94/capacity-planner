@@ -86,13 +86,13 @@ test("API espone health, sprints, plan, eval e dashboard senza DB", async () => 
   assert.equal(sprintData.storedPlans, 0);
   assert.deepEqual(sprintData.sprints, [
     { name: "S1", members: 10, demands: 12 },
-    { name: "S2", members: 9, demands: 10 },
+    { name: "S2", members: 9, demands: 11 },
     { name: "S3", members: 8, demands: 13 },
     { name: "S4", members: 10, demands: 14 },
   ]);
   assert.equal(hasGroundTruth(sprintData), false);
 
-  const counts = [12, 10, 13, 14];
+  const counts = [12, 11, 13, 14];
   for (let i = 0; i < sprintData.sprints.length; i++) {
     const name = sprintData.sprints[i].name;
     const res = await get("/api/plan?sprint=" + name);
@@ -122,7 +122,7 @@ test("API espone health, sprints, plan, eval e dashboard senza DB", async () => 
   assert.equal(metrics.createdAt, "2026-11-19T09:00:00.000Z");
   assert.equal(metrics.dataset, "capacity-planner");
   assert.equal(metrics.overloadDetectionAccuracy, 0.75);
-  assert.equal(metrics.assignmentRate, 1);
+  assert.equal(metrics.assignmentRate, 49 / 50);
   assert.equal(metrics.unassignedExplained, 1);
   assert.equal(typeof metrics.note, "string");
   // La nota e' ammessa, i dati della probe e la ground truth no.
@@ -175,6 +175,53 @@ test("API espone health, sprints, plan, eval e dashboard senza DB", async () => 
 
   const notFound = await get("/nope");
   assert.equal(notFound.status, 404);
+});
+
+test("API /api/plan: S2 mostra demand non assegnata e S3 un membro in overload", async () => {
+  const s2 = await get("/api/plan?sprint=S2");
+  assert.equal(s2.status, 200);
+  const s2plan = await s2.json() as {
+    sprint: string;
+    unassigned: string[];
+    assignments: Array<{ demandId: string; memberId: string | null; reason: string }>;
+    persisted: boolean;
+  };
+  assert.equal(s2plan.sprint, "S2");
+  assert.deepEqual(s2plan.unassigned, ["d11"]);
+  const nullA = s2plan.assignments.find((a) => a.memberId === null)!;
+  assert.equal(nullA.demandId, "d11");
+  assert.equal(nullA.reason, "Nessuna disponibilità per skill Kafka: servono 8 h");
+  assert.equal(s2plan.persisted, false);
+
+  const s3 = await get("/api/plan?sprint=S3");
+  assert.equal(s3.status, 200);
+  const s3plan = await s3.json() as {
+    sprint: string;
+    members: Array<{
+      member: { id: string };
+      assignedHours: number;
+      utilizationPct: number;
+      overloaded: boolean;
+    }>;
+    totals: { overloadedMembers: number };
+    persisted: boolean;
+  };
+  assert.equal(s3plan.sprint, "S3");
+  const over = s3plan.members.filter((m) => m.overloaded);
+  assert.deepEqual(over.map((m) => m.member.id), ["SC"]);
+  assert.ok(over[0].utilizationPct > 85);
+  assert.equal(over[0].assignedHours, 12);
+  assert.equal(s3plan.totals.overloadedMembers, 1);
+  assert.equal(s3plan.persisted, false);
+
+  // Il renderer espone gia' soglia, barre in allarme e area avvisi; verificarne
+  // la presenza con i dati reali del dashboard iniziale.
+  const root = await get("/");
+  const html = await root.text();
+  assert.ok(html.includes("util-threshold"));
+  assert.ok(html.includes("Soglia 85%"));
+  assert.ok(html.includes("util-fill over"));
+  assert.ok(html.includes("Avvisi"));
 });
 
 test("dashboard evidenzia oltre 85% e avvisa le demand non assegnate", async () => {
