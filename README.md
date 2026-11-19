@@ -1,4 +1,4 @@
-# Capacity Planner
+﻿# Capacity Planner
 
 ## Il problema vero
 
@@ -56,6 +56,10 @@ Fonte: `results/eval.json` generato da `scripts/eval.ts` (`evaluate()` in `src/e
 - Nessuna integrazione reale con Jira, Confluence, calendari o sistemi HR; la persistenza D1, quando raggiungibile, è usata solo in lettura (`capacity_plans`) e il Worker non scrive piani.
 
 ## Prova tu
+
+Demo live: https://capacity-planner.riccardobozzato.workers.dev
+
+Caso sul sito: https://riccardobozzato.com/casi/capacity-planner
 
 Prerequisito: Node.js ≥ 22.6.
 
