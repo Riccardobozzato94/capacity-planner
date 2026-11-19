@@ -6,6 +6,11 @@ const CREATED_AT = "2026-11-19T09:00:00.000Z";
 const DATASET = "capacity-planner";
 const EVAL_ID = "eval-capacity-20261119";
 
+// Rende esplicito lo scope di unassignedExplained: il valore non puo essere
+// letto come evidenza sui soli 4 sprint del dataset.
+const NOTE =
+  "I 4 sprint sintetici non hanno demand non assegnate. unassignedExplained e reso non vacuo da una probe interna, non conteggiata in count: la probe esercita una demand senza alcun membro con la skill richiesta. Il valore copre gli sprint del dataset piu la probe.";
+
 // Ground truth annotata a mano, indipendente da planCapacity: id dei membri
 // che l'annotatore considera in overload. Non e derivata dall'output del motore.
 // L'annotatore usa un giudizio di rischio key-person, non la soglia fissa 85%:
@@ -49,6 +54,7 @@ export function evaluate(): {
   dataset: string;
   seed: string;
   count: number;
+  note: string;
   overloadDetectionAccuracy: number;
   assignmentRate: number;
   unassignedExplained: number;
@@ -70,7 +76,10 @@ export function evaluate(): {
     const predicted = result.members
       .filter((m) => m.overloaded)
       .map((m) => m.member.id);
-    const expected = EXPECTED_OVERLOADED[sprint.name] ?? [];
+    const expected = EXPECTED_OVERLOADED[sprint.name];
+    if (expected === undefined) {
+      throw new Error(`Ground truth mancante per lo sprint ${sprint.name}`);
+    }
     if (sameIds(predicted, expected)) overloadMatches += 1;
 
     assignedDemands += result.assignments.filter((a) => a.memberId !== null).length;
@@ -96,6 +105,7 @@ export function evaluate(): {
     dataset: DATASET,
     seed: String(SEED),
     count: SPRINTS.length,
+    note: NOTE,
     overloadDetectionAccuracy: fraction(overloadMatches, SPRINTS.length),
     assignmentRate: fraction(assignedDemands, totalDemands),
     unassignedExplained: fraction(

@@ -4,6 +4,7 @@
   "dataset": "capacity-planner",
   "seed": "20261119",
   "count": 4,
+  "note": "I 4 sprint sintetici non hanno demand non assegnate. unassignedExplained e reso non vacuo da una probe interna, non conteggiata in count: la probe esercita una demand senza alcun membro con la skill richiesta. Il valore copre gli sprint del dataset piu la probe.",
   "overloadDetectionAccuracy": 0.75,
   "assignmentRate": 1,
   "unassignedExplained": 1

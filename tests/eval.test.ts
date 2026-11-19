@@ -12,17 +12,25 @@ test("eval restituisce metriche complete su 4 sprint", () => {
   assert.ok(e.assignmentRate >= 0 && e.assignmentRate <= 1);
 });
 
-test("eval espone esattamente i campi del brief", () => {
+test("eval espone esattamente i campi del contratto", () => {
   assert.deepEqual(Object.keys(evaluate()).sort(), [
     "assignmentRate",
     "count",
     "createdAt",
     "dataset",
     "id",
+    "note",
     "overloadDetectionAccuracy",
     "seed",
     "unassignedExplained",
   ]);
+});
+
+test("eval dichiara esplicitamente lo scope di unassignedExplained", () => {
+  const e = evaluate();
+  assert.equal(typeof e.note, "string");
+  assert.ok(e.note.includes("4"), "la nota deve citare i 4 sprint del dataset");
+  assert.ok(e.note.includes("probe"), "la nota deve citare la probe non conteggiata");
 });
 
 test("eval blocca ground truth indipendente e metadati deterministici", () => {
